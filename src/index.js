@@ -2,25 +2,60 @@ import './styles/index.scss';
 import './assets/fonts/Roboto-Regular.ttf';
 import './component.js';
 import * as THREE from 'three';
-// import Stats from 'three/examples/jsm/libs/stats.module';
+// import * as CANNON from 'cannon'
+import Stats from 'three/examples/jsm/libs/stats.module';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 
+//local
 let local ={};
 window.local = local;
 local.camera = [];
 local.controls = [];
 local.heroPosition = '';
-var clamp = (num, min, max) => Math.min(Math.max(num, min), max);
+
+// event
 local.isEvent = "";
 local.isEvent2 = "";
-local.nameFirst = "";
-local.nameNext = "";
-var clock = new THREE.Clock();
-// var outlineSize = characterSize * 0.05;
+local.positionClick ={};
+// /event
 
-// Track all objects and collisions.
+// ground and collisions
+local.ground = [];
+local.collisions = [];
+// /ground and collisions
+
+// hero
+local.hero = [];
+local.heroPosition = '';
+// /hero
+
+// comment
+// local.nameFirst = "";
+// local.nameNext = "";
+// /comment
+
+// /local
+
+
+// scene
+
+let scene, renderer, camera, controls;
+let model, skeleton, mixer, stats;
+// var raycaster = new THREE.Raycaster()
+// var mouse = new THREE.Vector2();
+var clock = new THREE.Clock();
+
+// /scene
+
+// physics
+// var world;
+// var fixedTimeStep = 1 / 60;
+// var maxSubSteps = 3;
+// var mass = 5;
+// var lastTime;
+// /physics
 
 // move
 let moveForward = false;
@@ -31,57 +66,59 @@ let moveRun = false;
 // /move
 
 // anim
+let idleAction, walkAction, runAction, kickAction;
+local.actions =[];
+// idel
 local.idleAnim = {};
-local.idleParam = {};
+local.idleParam = [];
+// /idel
 
+// walk
 local.walkAnim = {};
 local.walkParam = [];
+// /walk
 
+// run
 local.runAnim = {};
 local.runParam = [];
+// /run
 
+// kick
 local.kickAnim = {};
 local.kickParam = [];
+// /kick
 
-
-local.ground = [];
-local.collisions = [];
-local.hero = [];
-local.positionClick ={};
-
-// Set mouse and raycaster.
-var raycaster = new THREE.Raycaster()
-var mouse = new THREE.Vector2();
-
-let scene, renderer, camera, controls;
-//  stats;
-let model, skeleton, mixer;
-let idleAction, walkAction, runAction, kickAction;
-let idleWeight, walkWeight, runWeight, kickWeight;
-local.actions =[];
+// /anim
 
 init();
 animate();
 
 function init() {
+  // scene
   scene = new THREE.Scene();
   scene.background = new THREE.Color( 0xcccccc );
   scene.fog = new THREE.FogExp2( 0xcccccc, 0.002 );
-
+  // /scene
+  // render
   renderer = new THREE.WebGLRenderer( { antialias: true } );
   renderer.setPixelRatio( window.devicePixelRatio );
   renderer.setSize( window.innerWidth, window.innerHeight );
   renderer.outputEncoding = THREE.sRGBEncoding;
   renderer.shadowMap.enabled = true;
   document.body.appendChild( renderer.domElement );
+  // /render
+  // fps
+  stats = new Stats();
+	document.body.appendChild( stats.dom );
+  // /fps
+  // camera
   camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 1000 );
   camera.position.set(1.5155112310854661, 27.14502531123497, -46.42954147792327);
   camera.lookAt( 0, 5 ,0 );
   local.camera = camera;
-  // local.camera.parent = scene.children[4];
   scene.add(camera)
-
-
+  // /camera
+  // OrbitControls
   controls = new OrbitControls( camera, renderer.domElement );
   controls.listenToKeyEvents( window ); // optional
   controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
@@ -91,9 +128,9 @@ function init() {
   controls.maxDistance = 100;
   controls.maxPolarAngle = Math.PI / 2;
   local.controls = controls;
-  local.controls.target.set(0,5,0)
-  // local.camera.parent = scene.children[4];
-
+  local.controls.target.set(0,7,0)
+  // /OrbitControls
+  // loading model
   const dracoLoader = new DRACOLoader();
   dracoLoader.setDecoderPath( '../node_modules/three/examples/js/libs/draco/gltf/' );
   const loader = new GLTFLoader();
@@ -113,7 +150,6 @@ function init() {
       model.scale.set( 0.2, 0.2, 0.2 );
       model.position.set(0, 4.75, 0);
       scene.add( model );
-      // local.heroPosition = scene.children[4].position
       local.hero = model ;
       model.traverse( function ( object ) {
         if ( object.isMesh ) object.castShadow = true;
@@ -125,7 +161,7 @@ function init() {
       
       const animations = gltf.animations;
       mixer = new THREE.AnimationMixer( model );
-  
+
       idleAction = mixer.clipAction( animations[ 0 ] );
       walkAction = mixer.clipAction( animations[ 1 ] );
       runAction = mixer.clipAction( animations[ 2 ] );
@@ -139,31 +175,32 @@ function init() {
       // local.actions[1].weight = 0;
       // local.actions[2].weight = 0;
       // local.actions[3].weight = 0;
-      local.idleAnim = local.actions[0];
-      local.idleParam = {
-        name: "heroIdle",
-        anim: local.idleAnim,
-        weight: 1
-      };
-      local.walkAnim = local.actions[0];
-      local.walkParam = {
-        name: "heroIdle",
-        anim: local.walkAnim,
-        weight: 1
-      };
-      local.runAnim = local.actions[0];
-      local.runParam = {
-        name: "heroIdle",
-        anim: local.runAnim,
-        weight: 1
-      };
+      // local.idleAnim = local.actions[0];
+      // local.idleParam = {
+      //   name: "heroIdle",
+      //   anim: local.idleAnim,
+      //   weight: 1
+      // };
+      // local.walkAnim = local.actions[0];
+      // local.walkParam = {
+      //   name: "heroIdle",
+      //   anim: local.walkAnim,
+      //   weight: 1
+      // };
+      // local.runAnim = local.actions[0];
+      // local.runParam = {
+      //   name: "heroIdle",
+      //   anim: local.runAnim,
+      //   weight: 1
+      // };
       // console.log(local.idleParam);
       // console.log(local.walkParam);
       // console.log(local.runParam);
       // console.log(local.kickAnim);
     } );
   })
-  // ставим и добавляем освещение
+  // /loading model
+  // Light
   // hemi
   const hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444 );
   hemiLight.position.set( 0, 20, 0 );
@@ -181,98 +218,92 @@ function init() {
   dirLight.shadow.camera.far = 40;
   scene.add( dirLight );
   // /dir
-  // /ставим и добавляем освещение
+  // /Light
   window.scene = scene;
   window.addEventListener( 'resize', onWindowResize );
+  // move
+  const onKeyDown = function ( event ) {
+    switch ( event.code ) {
+      //case 'ArrowUp':
+      case 'KeyW':
+        moveForward = true;
+        // console.log(moveForward)
+        break;
 
-// move
-const onKeyDown = function ( event ) {
-  switch ( event.code ) {
-    //case 'ArrowUp':
-    case 'KeyW':
-      moveForward = true;
-      // console.log(moveForward)
-      break;
+      //case 'ArrowLeft':
+      case 'KeyA':
+        moveLeft = true;
+        // console.log(moveLeft)
+        break;
 
-    //case 'ArrowLeft':
-    case 'KeyA':
-      moveLeft = true;
-      // console.log(moveLeft)
-      break;
+      //case 'ArrowDown':
+      case 'KeyS':
+        moveBackward = true;
+        // console.log(moveBackward)
+        break;
 
-    //case 'ArrowDown':
-    case 'KeyS':
-      moveBackward = true;
-      // console.log(moveBackward)
-      break;
+      //case 'ArrowRight':
+      case 'KeyD':
+        moveRight = true;
+        // console.log(moveRight)
+        break;
 
-    //case 'ArrowRight':
-    case 'KeyD':
-      moveRight = true;
-      // console.log(moveRight)
-      break;
+      case 'ShiftLeft':
+        moveRun = true;
+        // console.log(moveRun)
+        break;
+    }
+  };
+  const onKeyUp = function ( event ) {
+    // console.log("qwrety")
+    switch ( event.code ) {
+    // case 'ArrowUp':
+      case 'KeyW':
+        moveForward = false;
+        animationMoveStop()
+        // console.log(moveForward)
+        break;
 
-    case 'ShiftLeft':
-      moveRun = true;
-      // console.log(moveRun)
-      break;
-  }
-};
-const onKeyUp = function ( event ) {
-  // console.log("qwrety")
-  switch ( event.code ) {
-   // case 'ArrowUp':
-    case 'KeyW':
-      moveForward = false;
-      animationMoveStop()
-      // console.log(moveForward)
-      break;
+    // case 'ArrowLeft':
+      case 'KeyA':
+        moveLeft = false;
+        // console.log(moveLeft)
+        break;
 
-   // case 'ArrowLeft':
-    case 'KeyA':
-      moveLeft = false;
-      // console.log(moveLeft)
-      break;
+    // case 'ArrowDown':
+      case 'KeyS':
+        moveBackward = false;
+        animationMoveStop()
+        // console.log(moveBackward)
+        break;
 
-   // case 'ArrowDown':
-    case 'KeyS':
-      moveBackward = false;
-      animationMoveStop()
-      // console.log(moveBackward)
-      break;
+      //case 'ArrowRight':
+      case 'KeyD':
+        moveRight = false;
+        // console.log(moveRight)
+        break;
+      case 'ShiftLeft':
+        local.isEvent = false;
+        local.isEvent2 = false;
+        moveRun = false;
+        // console.log(moveRun)
+        break;
+    }
 
-    //case 'ArrowRight':
-    case 'KeyD':
-      moveRight = false;
-      // console.log(moveRight)
-      break;
-    case 'ShiftLeft':
-      local.isEvent = false;
-      local.isEvent2 = false;
-      moveRun = false;
-      // console.log(moveRun)
-      break;
-  }
-
-};
-
-document.addEventListener( 'keydown', onKeyDown );
-document.addEventListener( 'keyup', onKeyUp );
-// /move
-
-
-
+  };
+  document.addEventListener( 'keydown', onKeyDown );
+  document.addEventListener( 'keyup', onKeyUp );
+  // /move
 }
 
+// resize
 function onWindowResize() {
-
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
-
   renderer.setSize( window.innerWidth, window.innerHeight );
-
 }
-
+// /resize
+// render-animate
 function animate() {
   requestAnimationFrame( animate );
   local.heroPosition = scene.children[4].position;
@@ -281,13 +312,15 @@ function animate() {
   mixer.update( mixerUpdateDelta );
   local.camera.updateProjectionMatrix()
   controls.update();
+  stats.update();
   render();
   move();
 }
-
 function render() {
   renderer.render( scene, camera );
 }
+// /render-animate
+// moveHero
 function move(){
   var delta = clock.getDelta(); // seconds.
 	var moveDistance = 35 * delta; // 200 pixels per second
@@ -326,7 +359,7 @@ function move(){
   }
 
 	// rotate left/right/up/down
-	var rotation_matrix = new THREE.Matrix4().identity();
+	// var rotation_matrix = new THREE.Matrix4().identity();
   if( moveBackward === true){
     if ( moveLeft === true )
     local.hero.rotateOnAxis( new THREE.Vector3(0,1,0), -rotateAngle);
@@ -338,47 +371,9 @@ function move(){
     if ( moveRight === true )
       local.hero.rotateOnAxis( new THREE.Vector3(0,1,0), -rotateAngle);
   }
-
-
-	var relativeCameraOffset = new THREE.Vector3(0,50,200);
-
-	// var cameraOffset = relativeCameraOffset.applyMatrix4( local.hero.matrixWorld );
-
-	// camera.position.x = cameraOffset.x;
-	// camera.position.y = cameraOffset.y;
-	// camera.position.z = cameraOffset.z;
-	// camera.lookAt( local.hero.position );
 }
-function onMouseMove( event ) {
-	mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-	mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-}
-
-window.addEventListener( 'mousemove', onMouseMove, false );
-
-window.addEventListener('click', event =>{
-  // Grab the coordinates.
-  mouse.x = ( event.clientX / renderer.domElement.clientWidth ) * 2 - 1;
-  mouse.y = - ( event.clientY / renderer.domElement.clientHeight ) * 2 + 1;
-
-  // Use the raycaster to detect intersections.
-  raycaster.setFromCamera( mouse, camera );
-
-  // Grab all objects that can be intersected.
-  var intersects = raycaster.intersectObjects( scene.children[3].children, true );
-  if ( intersects.length > 0 ) {
-    // console.log(intersects)
-    intersects.forEach(item =>{
-      if(item.object.name === "ground"){
-        // console.log(item)
-        local.positionClick = item.point;
-        // console.log(local.positionClick)
-      }
-    })
-  }
-})
-
-
+// /moveHero
+// animationMoveHero
 local.isEvent = false;
 local.isEvent2 = false;
 function animationMove(id, time){
@@ -423,43 +418,73 @@ function animationMoveStop(){
   })
   local.actions[0].play()
 }
+// animationMoveHero
+// blendAnim
+// function BlendAnims(blend) {
+//   //idle
+//   local.actions[0].weight = 1 - clamp(blend, 0, 1);
+//   local.idleParam.anim.setWeightForAllAnimatables(local.idleParam.weight);
+//   //walk
+//   local.walkParam.weight = 1 - Math.abs(blend - 1);
+//   local.walkParam.anim.setWeightForAllAnimatables(local.walkParam.weight);
+//   //run
+//   local.runParam.weight = clamp(blend - 1, 0, 1);
+//   local.runParam.anim.setWeightForAllAnimatables(local.runParam.weight);
+//   //heroSpeed
+//   // local.curSpeed = local.runParam.weight * local.RSpeed + local.walkParam.weight * local.WSpeed;
+//   // if (blend < 0.01) {
+//   //   local.curSpeed = 0
+//   // } //можэет сработает может нет надо затестить
+// }
+// /blendAnim
+// mouseMove - raycaster
+// function onMouseMove( event ) {
+// 	mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+// 	mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+// }
+// window.addEventListener( 'mousemove', onMouseMove, false );
+// window.addEventListener('click', event =>{
+//   // Grab the coordinates.
+//   mouse.x = ( event.clientX / renderer.domElement.clientWidth ) * 2 - 1;
+//   mouse.y = - ( event.clientY / renderer.domElement.clientHeight ) * 2 + 1;
 
-function BlendAnims(blend) {
-  //idle
-  local.actions[0].weight = 1 - clamp(blend, 0, 1);
-  local.idleParam.anim.setWeightForAllAnimatables(local.idleParam.weight);
-  //walk
-  local.walkParam.weight = 1 - Math.abs(blend - 1);
-  local.walkParam.anim.setWeightForAllAnimatables(local.walkParam.weight);
-  //run
-  local.runParam.weight = clamp(blend - 1, 0, 1);
-  local.runParam.anim.setWeightForAllAnimatables(local.runParam.weight);
-  //heroSpeed
-  // local.curSpeed = local.runParam.weight * local.RSpeed + local.walkParam.weight * local.WSpeed;
-  // if (blend < 0.01) {
-  //   local.curSpeed = 0
-  // } //можэет сработает может нет надо затестить
-}
+//   // Use the raycaster to detect intersections.
+//   raycaster.setFromCamera( mouse, camera );
 
-function blendTo(animFirst, animNext) {
-  var delta2 = clock.getDelta();
-  var deltaBlend = 10 * delta2; 
+//   // Grab all objects that can be intersected.
+//   var intersects = raycaster.intersectObjects( scene.children[3].children, true );
+//   if ( intersects.length > 0 ) {
+//     // console.log(intersects)
+//     intersects.forEach(item =>{
+//       if(item.object.name === "ground"){
+//         // console.log(item)
+//         local.positionClick = item.point;
+//         // console.log(local.positionClick)
+//       }
+//     })
+//   }
+// })
+// /mouseMove - raycaster
 
 
-  if (local.actions[animFirst].weight === 1 ||  local.actions[animFirst].weight > 0.1) {
-    console.log('ghbdtn')
-    local.actions[animFirst].weight -= (1 / deltaBlend);
-    local.actions[animNext].weight += (1 / deltaBlend);
-    local.nameFirst = local.actions[animFirst]._clip.name;
-    console.log(nameFirst)
-    local.nameNext = local.actions[animNext]._clip.name;
-    console.log(nameNext)
-    // local.actions.forEach((item) =>{
-    //   console.log(item._clip.name)
-    //   if (item._clip.name != nameFirst || item._clip.name != nameNext){
-    //     item.weight = 0;
-    //   }
-    // })
-  }
-}
+
+// function blendTo(animFirst, animNext) {
+//   var delta2 = clock.getDelta();
+//   var deltaBlend = 10 * delta2; 
+//   if (local.actions[animFirst].weight === 1 ||  local.actions[animFirst].weight > 0.1) {
+//     console.log('ghbdtn')
+//     local.actions[animFirst].weight -= (1 / deltaBlend);
+//     local.actions[animNext].weight += (1 / deltaBlend);
+//     local.nameFirst = local.actions[animFirst]._clip.name;
+//     console.log(nameFirst)
+//     local.nameNext = local.actions[animNext]._clip.name;
+//     console.log(nameNext)
+//     // local.actions.forEach((item) =>{
+//     //   console.log(item._clip.name)
+//     //   if (item._clip.name != nameFirst || item._clip.name != nameNext){
+//     //     item.weight = 0;
+//     //   }
+//     // })
+//   }
+// }
 //  w - 87 : a - 65 : s - 83 : d - 68 
