@@ -7,7 +7,7 @@ import Stats from 'three/examples/jsm/libs/stats.module';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
-
+window.THREE = THREE;
 //local
 let local ={};
 window.local = local;
@@ -43,20 +43,10 @@ local.heroPosition = '';
 
 let scene, renderer, camera, controls;
 let model, skeleton, mixer, stats;
-// var raycaster = new THREE.Raycaster()
-// var mouse = new THREE.Vector2();
+window.raycaster = new THREE.Raycaster()
+window.raycaster.ray.direction = new THREE.Vector3(0,-1,0);
 var clock = new THREE.Clock();
-
 // /scene
-
-// physics
-var world;
-var fixedTimeStep = 1 / 60;
-// var maxSubSteps = 3;
-// var mass = 5;
-// var lastTime;
-// /physics
-
 // move
 let moveForward = false;
 let moveBackward = false;
@@ -101,6 +91,7 @@ function init() {
   // /scene
   // render
   renderer = new THREE.WebGLRenderer( { antialias: true } );
+  window.renderer = renderer;
   renderer.setPixelRatio( window.devicePixelRatio );
   renderer.setSize( window.innerWidth, window.innerHeight );
   renderer.outputEncoding = THREE.sRGBEncoding;
@@ -114,21 +105,24 @@ function init() {
   // camera
   camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 1000 );
   camera.position.set(1.5155112310854661, 27.14502531123497, -46.42954147792327);
+  window.camera = camera;
   camera.lookAt( 0, 5 ,0 );
   local.camera = camera;
   scene.add(camera)
   // /camera
   // OrbitControls
   controls = new OrbitControls( camera, renderer.domElement );
+  window.controls = controls
   controls.listenToKeyEvents( window ); // optional
   controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
   controls.dampingFactor = 0.05;
   controls.screenSpacePanning = false;
-  controls.minDistance = 5;
-  controls.maxDistance = 100;
-  controls.maxPolarAngle = Math.PI / 2;
+  controls.minDistance = 7;
+  controls.maxDistance = 7;
+  controls.maxPolarAngle = Math.PI / 3;
+  controls.minPolarAngle = Math.PI / 3;
   local.controls = controls;
-  local.controls.target.set(0,7,0)
+  //local.controls.target.set(0,7,0)
   // /OrbitControls
   // loading model
   const dracoLoader = new DRACOLoader();
@@ -151,6 +145,8 @@ function init() {
       model.position.set(0, 4.75, 0);
       scene.add( model );
       local.hero = model ;
+      local.controls.target = local.hero.position;
+    //  window.intersectsH =  new THREE.ArrowHelper( window.raycaster.ray.direction, local.hero.position, 10, 0xcccccc);
       model.traverse( function ( object ) {
         if ( object.isMesh ) object.castShadow = true;
       } );
@@ -158,7 +154,7 @@ function init() {
       skeleton = new THREE.SkeletonHelper( model );
       skeleton.visible = false;
       scene.add( skeleton );
-      
+
       const animations = gltf.animations;
       mixer = new THREE.AnimationMixer( model );
 
@@ -306,15 +302,35 @@ function onWindowResize() {
 // render-animate
 function animate() {
   requestAnimationFrame( animate );
+  window.raycaster.ray.origin = new THREE.Vector3(local.hero.position.x,local.hero.position.y+1.5,local.hero.position.z);
   local.heroPosition = scene.children[4].position;
-  local.camera.parent = scene.children[4]
+  //local.camera.parent = scene.children[4]
   let mixerUpdateDelta = clock.getDelta();
   mixer.update( mixerUpdateDelta );
-  local.camera.updateProjectionMatrix()
+  //local.camera.updateProjectionMatrix()
   controls.update();
   stats.update();
   render();
   move();
+  intersects();
+
+  controls.maxAzimuthAngle =-local.hero.rotation.y%Math.PI //- Math.PI*(local.hero.rotation.y / Math.PI);
+  controls.minAzimuthAngle =-local.hero.rotation.y%Math.PI //- Math.PI*(local.hero.rotation.y / Math.PI);
+}
+function intersects(){
+  var intersects = window.raycaster.intersectObjects( scene.children[3].children, true );
+  if ( intersects.length > 0 ) {
+    // console.log(intersects)
+    intersects.forEach(item =>{
+      if(item.object.name === "ground"){
+        // console.log(item)
+        //local.positionClick = item.point;
+        //console.log(local.hero.position.y,item.point.y)
+        local.hero.position.y = item.point.y
+        // console.log(local.positionClick)
+      }
+    })
+  }
 }
 function render() {
   renderer.render( scene, camera );
@@ -385,7 +401,7 @@ function animationMove(id, time){
   //       item.weight = 0;
   //     }
   //   })
-  // } 
+  // }
   if(local.isEvent == false ){
     local.isEvent = true;
     local.actions.forEach((item)=>{
@@ -394,9 +410,9 @@ function animationMove(id, time){
     local.actions[id - 1].play()
     local.actions[id].timeScale = time;
     local.actions[id].play()
-    console.log('Ходьба 1')
+    //console.log('Ходьба 1')
   }
-  // blendTo(0, 1) 
+  // blendTo(0, 1)
 }
 function animationMoveRun(id, time){
   if(local.isEvent2 == false ){
@@ -438,39 +454,38 @@ function animationMoveStop(){
 // }
 // /blendAnim
 // mouseMove - raycaster
-// function onMouseMove( event ) {
-// 	mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-// 	mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-// }
-// window.addEventListener( 'mousemove', onMouseMove, false );
-// window.addEventListener('click', event =>{
-//   // Grab the coordinates.
-//   mouse.x = ( event.clientX / renderer.domElement.clientWidth ) * 2 - 1;
-//   mouse.y = - ( event.clientY / renderer.domElement.clientHeight ) * 2 + 1;
+ var mouse = new THREE.Vector2();
+var raycaster = new THREE.Raycaster();
+ document.addEventListener("click", (event)=>{
+   console.log("1");
+   // Grab the coordinates.
+   mouse.x = ( event.clientX / renderer.domElement.clientWidth ) * 2 - 1;
+   mouse.y = - ( event.clientY / renderer.domElement.clientHeight ) * 2 + 1;
 
 //   // Use the raycaster to detect intersections.
-//   raycaster.setFromCamera( mouse, camera );
+   raycaster.setFromCamera( mouse, camera );
 
-//   // Grab all objects that can be intersected.
-//   var intersects = raycaster.intersectObjects( scene.children[3].children, true );
-//   if ( intersects.length > 0 ) {
-//     // console.log(intersects)
-//     intersects.forEach(item =>{
-//       if(item.object.name === "ground"){
-//         // console.log(item)
-//         local.positionClick = item.point;
-//         // console.log(local.positionClick)
-//       }
-//     })
-//   }
-// })
+   // Grab all objects that can be intersected.
+   // Grab all objects that can be intersected.
+   var intersects = raycaster.intersectObjects( scene.children[3].children, true );
+   if ( intersects.length > 0 ) {
+      console.log(intersects)
+     intersects.forEach(item =>{
+       if(item.object.name === "ground"){
+         // console.log(item)
+         local.positionClick = item.point;
+          console.log(local.positionClick)
+       }
+     })
+   }
+})
 // /mouseMove - raycaster
 
 
 
 // function blendTo(animFirst, animNext) {
 //   var delta2 = clock.getDelta();
-//   var deltaBlend = 10 * delta2; 
+//   var deltaBlend = 10 * delta2;
 //   if (local.actions[animFirst].weight === 1 ||  local.actions[animFirst].weight > 0.1) {
 //     console.log('ghbdtn')
 //     local.actions[animFirst].weight -= (1 / deltaBlend);
@@ -487,4 +502,4 @@ function animationMoveStop(){
 //     // })
 //   }
 // }
-//  w - 87 : a - 65 : s - 83 : d - 68 
+//  w - 87 : a - 65 : s - 83 : d - 68
