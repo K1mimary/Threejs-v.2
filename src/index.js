@@ -50,8 +50,8 @@ var clock = new THREE.Clock();
 // /scene
 
 // physics
-// var world;
-// var fixedTimeStep = 1 / 60;
+var world;
+var fixedTimeStep = 1 / 60;
 // var maxSubSteps = 3;
 // var mass = 5;
 // var lastTime;
