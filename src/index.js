@@ -4,9 +4,10 @@ import './component.js';
 import * as THREE from 'three';
 // import * as CANNON from 'cannon'
 import Stats from 'three/examples/jsm/libs/stats.module';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+// import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+
 window.THREE = THREE;
 //local
 let local ={};
@@ -102,6 +103,7 @@ function init() {
   stats = new Stats();
 	document.body.appendChild( stats.dom );
   // /fps
+
   // camera
   camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 1, 1000 );
   camera.position.set(1.5155112310854661, 27.14502531123497, -46.42954147792327);
@@ -111,20 +113,23 @@ function init() {
   scene.add(camera)
   // /camera
   // OrbitControls
-  controls = new OrbitControls( camera, renderer.domElement );
-  window.controls = controls
-  controls.listenToKeyEvents( window ); // optional
-  controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
-  controls.dampingFactor = 0.05;
-  controls.screenSpacePanning = false;
-  controls.minDistance = 7;
-  controls.maxDistance = 7;
-  controls.maxPolarAngle = Math.PI / 3;
-  controls.minPolarAngle = Math.PI / 3;
-  local.controls = controls;
-  //local.controls.target.set(0,7,0)
+  // controls = new OrbitControls( camera, renderer.domElement );
+  // window.controls = controls
+  // controls.listenToKeyEvents( window ); // optional
+  // controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
+  // controls.dampingFactor = 0.05;
+  // controls.screenSpacePanning = false;
+  // controls.minDistance = 7;
+  // controls.maxDistance = 7;
+  // controls.maxPolarAngle = Math.PI / 3;
+  // controls.minPolarAngle = Math.PI / 3;
+  // local.controls = controls;
+  // local.controls.target.set(0,7,0)
   // /OrbitControls
   // loading model
+  // window.world = new CANNON.World();
+  // window.world.gravity.set(0, -9.82, 0);
+  // console.log(window.world)
   const dracoLoader = new DRACOLoader();
   dracoLoader.setDecoderPath( '../node_modules/three/examples/js/libs/draco/gltf/' );
   const loader = new GLTFLoader();
@@ -145,7 +150,7 @@ function init() {
       model.position.set(0, 4.75, 0);
       scene.add( model );
       local.hero = model ;
-      local.controls.target = local.hero.position;
+      // local.controls.target = local.hero.position;
     //  window.intersectsH =  new THREE.ArrowHelper( window.raycaster.ray.direction, local.hero.position, 10, 0xcccccc);
       model.traverse( function ( object ) {
         if ( object.isMesh ) object.castShadow = true;
@@ -164,37 +169,22 @@ function init() {
       kickAction = mixer.clipAction( animations[ 3 ] );
 
       local.actions = [ idleAction, walkAction, runAction, kickAction ];
-      // local.actions.forEach((item) =>{
-      //   item.play()
-      // })
-      local.actions[0].weight = 0;
-      // local.actions[1].weight = 0;
-      // local.actions[2].weight = 0;
-      // local.actions[3].weight = 0;
-      // local.idleAnim = local.actions[0];
-      // local.idleParam = {
-      //   name: "heroIdle",
-      //   anim: local.idleAnim,
-      //   weight: 1
-      // };
-      // local.walkAnim = local.actions[0];
-      // local.walkParam = {
-      //   name: "heroIdle",
-      //   anim: local.walkAnim,
-      //   weight: 1
-      // };
-      // local.runAnim = local.actions[0];
-      // local.runParam = {
-      //   name: "heroIdle",
-      //   anim: local.runAnim,
-      //   weight: 1
-      // };
-      // console.log(local.idleParam);
-      // console.log(local.walkParam);
-      // console.log(local.runParam);
-      // console.log(local.kickAnim);
-    } );
-  })
+      // local.actions[0].weight = 0;
+    },
+    function ( xhr ) {
+
+      console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
+      
+    },
+    // called when loading has errors
+    function ( error ) {
+  
+      console.log( 'An error happened' );
+  
+    }   
+    );
+  }
+  )
   // /loading model
   // Light
   // hemi
@@ -302,32 +292,26 @@ function onWindowResize() {
 // render-animate
 function animate() {
   requestAnimationFrame( animate );
-  window.raycaster.ray.origin = new THREE.Vector3(local.hero.position.x,local.hero.position.y+1.5,local.hero.position.z);
   local.heroPosition = scene.children[4].position;
-  //local.camera.parent = scene.children[4]
+  local.camera.parent = scene.children[4]
   let mixerUpdateDelta = clock.getDelta();
   mixer.update( mixerUpdateDelta );
   //local.camera.updateProjectionMatrix()
-  controls.update();
+  // controls.update();
   stats.update();
   render();
   move();
   intersects();
 
-  controls.maxAzimuthAngle =-local.hero.rotation.y%Math.PI //- Math.PI*(local.hero.rotation.y / Math.PI);
-  controls.minAzimuthAngle =-local.hero.rotation.y%Math.PI //- Math.PI*(local.hero.rotation.y / Math.PI);
+  // controls.maxAzimuthAngle =-local.hero.rotation.y%(-Math.PI/2) //- Math.PI*(local.hero.rotation.y / Math.PI);
+  // controls.minAzimuthAngle =-local.hero.rotation.y%(-Math.PI/2) //- Math.PI*(local.hero.rotation.y / Math.PI);
 }
 function intersects(){
   var intersects = window.raycaster.intersectObjects( scene.children[3].children, true );
   if ( intersects.length > 0 ) {
-    // console.log(intersects)
     intersects.forEach(item =>{
       if(item.object.name === "ground"){
-        // console.log(item)
-        //local.positionClick = item.point;
-        //console.log(local.hero.position.y,item.point.y)
         local.hero.position.y = item.point.y
-        // console.log(local.positionClick)
       }
     })
   }
@@ -338,16 +322,17 @@ function render() {
 // /render-animate
 // moveHero
 function move(){
+  window.raycaster.ray.origin = new THREE.Vector3(local.hero.position.x,local.hero.position.y+1.5,local.hero.position.z);
   var delta = clock.getDelta(); // seconds.
-	var moveDistance = 35 * delta; // 200 pixels per second
+	var moveDistance = 13 * delta; // 200 pixels per second
 	var rotateAngle = Math.PI / 120;   // pi/2 radians (90 degrees) per second
   if( moveRun === false ){
     // move forwards/backwards/left/right
     if ( moveForward === true ){
-      local.hero.translateZ(  moveDistance );
+      local.hero.translateZ( moveDistance );
       // console.log('walk')
       animationMove(1, 1)
-      local.controls.target.set(local.heroPosition.x, local.heroPosition.y, local.heroPosition.z)
+      // local.controls.target.set(local.heroPosition.x, local.heroPosition.y, local.heroPosition.z)
     }
     if ( moveBackward === true ){
       // console.log('back')
@@ -356,15 +341,14 @@ function move(){
     }
   }
   if( moveRun === true ){
-    var moveDistanceRun = 70 * delta;
-    var moveDistanceRun2 = 43 * delta;
+    var moveDistanceRun2 = 52 * delta;
     // move forwards/backwards/left/right
     if ( moveForward === true ){
-      local.hero.translateZ(  moveDistanceRun );
+      local.hero.translateZ(  moveDistanceRun2 );
       // console.log('walk')
       animationMove(2, 1)
       animationMoveRun(2, 1)
-      local.controls.target.set(local.heroPosition.x, local.heroPosition.y, local.heroPosition.z)
+      local.hero.position.set(local.heroPosition.x, local.heroPosition.y, local.heroPosition.z)
     }
     if ( moveBackward === true ){
       // console.log('back')
@@ -393,26 +377,14 @@ function move(){
 local.isEvent = false;
 local.isEvent2 = false;
 function animationMove(id, time){
-  // if(local.isEvent == false ){
-  //   local.actions.forEach((item) =>{
-  //     local.isEvent = true;
-  //     console.log(item._clip.name)
-  //     if (item._clip.name != local.nameFirst || item._clip.name != local.nameNext){
-  //       item.weight = 0;
-  //     }
-  //   })
-  // }
   if(local.isEvent == false ){
     local.isEvent = true;
     local.actions.forEach((item)=>{
       item.stop()
     })
-    local.actions[id - 1].play()
     local.actions[id].timeScale = time;
     local.actions[id].play()
-    //console.log('Ходьба 1')
   }
-  // blendTo(0, 1)
 }
 function animationMoveRun(id, time){
   if(local.isEvent2 == false ){
@@ -422,7 +394,6 @@ function animationMoveRun(id, time){
     })
     local.actions[id].timeScale = time;
     local.actions[id].play()
-    // console.log('бег 1')
   }
 }
 function animationMoveStop(){
@@ -434,72 +405,6 @@ function animationMoveStop(){
   })
   local.actions[0].play()
 }
-// animationMoveHero
-// blendAnim
-// function BlendAnims(blend) {
-//   //idle
-//   local.actions[0].weight = 1 - clamp(blend, 0, 1);
-//   local.idleParam.anim.setWeightForAllAnimatables(local.idleParam.weight);
-//   //walk
-//   local.walkParam.weight = 1 - Math.abs(blend - 1);
-//   local.walkParam.anim.setWeightForAllAnimatables(local.walkParam.weight);
-//   //run
-//   local.runParam.weight = clamp(blend - 1, 0, 1);
-//   local.runParam.anim.setWeightForAllAnimatables(local.runParam.weight);
-//   //heroSpeed
-//   // local.curSpeed = local.runParam.weight * local.RSpeed + local.walkParam.weight * local.WSpeed;
-//   // if (blend < 0.01) {
-//   //   local.curSpeed = 0
-//   // } //можэет сработает может нет надо затестить
-// }
-// /blendAnim
-// mouseMove - raycaster
- var mouse = new THREE.Vector2();
-var raycaster = new THREE.Raycaster();
- document.addEventListener("click", (event)=>{
-   console.log("1");
-   // Grab the coordinates.
-   mouse.x = ( event.clientX / renderer.domElement.clientWidth ) * 2 - 1;
-   mouse.y = - ( event.clientY / renderer.domElement.clientHeight ) * 2 + 1;
-
-//   // Use the raycaster to detect intersections.
-   raycaster.setFromCamera( mouse, camera );
-
-   // Grab all objects that can be intersected.
-   // Grab all objects that can be intersected.
-   var intersects = raycaster.intersectObjects( scene.children[3].children, true );
-   if ( intersects.length > 0 ) {
-      console.log(intersects)
-     intersects.forEach(item =>{
-       if(item.object.name === "ground"){
-         // console.log(item)
-         local.positionClick = item.point;
-          console.log(local.positionClick)
-       }
-     })
-   }
-})
-// /mouseMove - raycaster
-
-
-
-// function blendTo(animFirst, animNext) {
-//   var delta2 = clock.getDelta();
-//   var deltaBlend = 10 * delta2;
-//   if (local.actions[animFirst].weight === 1 ||  local.actions[animFirst].weight > 0.1) {
-//     console.log('ghbdtn')
-//     local.actions[animFirst].weight -= (1 / deltaBlend);
-//     local.actions[animNext].weight += (1 / deltaBlend);
-//     local.nameFirst = local.actions[animFirst]._clip.name;
-//     console.log(nameFirst)
-//     local.nameNext = local.actions[animNext]._clip.name;
-//     console.log(nameNext)
-//     // local.actions.forEach((item) =>{
-//     //   console.log(item._clip.name)
-//     //   if (item._clip.name != nameFirst || item._clip.name != nameNext){
-//     //     item.weight = 0;
-//     //   }
-//     // })
-//   }
-// }
-//  w - 87 : a - 65 : s - 83 : d - 68
+// /moveHero
+// /animationMoveHero
+//  w - 87 : a - 65 : s - 83 : d - 68s

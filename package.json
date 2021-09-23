@@ -54,8 +54,10 @@
     "@babel/polyfill": "^7.8.7",
     "babylonjs": "^4.2.0",
     "babylonjs-loaders": "^4.2.0",
+    "cannon": "github:schteppe/cannon.js",
     "lodash": "^4.17.15",
     "normalize.css": "^8.0.1",
-    "three": "^0.132.2"
+    "three": "^0.132.2",
+    "three-to-cannon": "^4.0.2"
   }
 }
