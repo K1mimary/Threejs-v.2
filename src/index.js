@@ -88,7 +88,7 @@ function init() {
   // scene
   scene = new THREE.Scene();
   scene.background = new THREE.Color( 0xcccccc );
-  scene.fog = new THREE.FogExp2( 0xcccccc, 0.002 );
+  // scene.fog = new THREE.FogExp2( 0xcccccc, 0.002 );
   // /scene
   // render
   renderer = new THREE.WebGLRenderer( { antialias: true } );
@@ -144,6 +144,9 @@ function init() {
     model.traverse( function ( object ) {
       if ( object.isMesh ) object.receiveShadow = true;
     } );
+    scene.getObjectByName("ground").receiveShadow = false;
+    scene.getObjectByName("walls").receiveShadow = false;
+    
     loader.load( 'scene/Girl_animated_ready.glb', function ( gltf ) {
       model = gltf.scene;
       model.scale.set( 0.2, 0.2, 0.2 );
@@ -188,21 +191,47 @@ function init() {
   // /loading model
   // Light
   // hemi
-  const hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444 );
-  hemiLight.position.set( 0, 20, 0 );
-  scene.add( hemiLight );
+  // const hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444 );
+  // hemiLight.position.set( 0, 20, 0 );
+  // scene.add( hemiLight );
   // /hemi
-  // dir
-  const dirLight = new THREE.DirectionalLight( 0xffffff );
-  dirLight.position.set( 0.3230237595399805, 22.225286034237925, 29.531061699173936 );
-  dirLight.castShadow = true;
-  dirLight.shadow.camera.top = 2;
-  dirLight.shadow.camera.bottom = - 2;
-  dirLight.shadow.camera.left = - 2;
-  dirLight.shadow.camera.right = 2;
-  dirLight.shadow.camera.near = 0.1;
-  dirLight.shadow.camera.far = 40;
-  scene.add( dirLight );
+  // light
+  // color light
+  var colorLight1 = new THREE.Color( "rgb(251, 199, 126)" )
+  var colorLight2 = new THREE.Color( "rgb(90, 87, 250)" )
+  // /color light
+  //Create a PointLight and turn on shadows for the light
+  const pointLight1 = new THREE.PointLight( colorLight1, 0.7, 0 );
+  pointLight1.position.set( 37, 45.5 ,-20 );
+  pointLight1.castShadow = true; // default false
+  // shadow
+  pointLight1.shadow.mapSize.width = 1024; // default
+  pointLight1.shadow.mapSize.height = 1024; // default
+  pointLight1.shadow.camera.near = 0.5; // default
+  pointLight1.shadow.camera.far = 100; 
+  // /shadow
+  scene.add( pointLight1 );
+  const pointLight2 = new THREE.PointLight( colorLight2, 0.7, 0 );
+  pointLight2.position.set( -37, 45.5 , 20 );
+  pointLight2.castShadow = true; // default false
+  // shadow
+  pointLight2.shadow.mapSize.width = 1024; // default
+  pointLight2.shadow.mapSize.height = 1024; // default
+  pointLight2.shadow.camera.near = 0.5; // default
+  pointLight2.shadow.camera.far = 100; 
+  // shadow
+  scene.add( pointLight2 );
+
+  // const dirLight = new THREE.DirectionalLight( 0xffffff );
+  // dirLight.position.set( 0.3230237595399805, 22.225286034237925, 29.531061699173936 );
+  // dirLight.castShadow = true;
+  // dirLight.shadow.camera.top = 2;
+  // dirLight.shadow.camera.bottom = - 2;
+  // dirLight.shadow.camera.left = - 2;
+  // dirLight.shadow.camera.right = 2;
+  // dirLight.shadow.camera.near = 0.1;
+  // dirLight.shadow.camera.far = 40;
+  // scene.add( dirLight );
   // /dir
   // /Light
   window.scene = scene;
